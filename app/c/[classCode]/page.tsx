@@ -90,7 +90,7 @@ export default async function ClassPollPage({
         </p>
       )}
 
-      <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
+      <div className="flex flex-wrap justify-center gap-3">
         {choices.map((c) => (
           <form key={c} action="/api/responses" method="POST">
             <input type="hidden" name="pollId" value={activePoll.id} />
