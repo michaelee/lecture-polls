@@ -146,7 +146,12 @@ export default async function ClassDetailPage({
       </section>
 
       <section>
-        <h2 className="mb-3 text-lg font-medium">Polls</h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-medium">Polls</h2>
+          <Link href={`/admin/classes/${klass.code}/live`} className="text-sm underline">
+            View live results
+          </Link>
+        </div>
         <PollsPanel
           code={klass.code}
           polls={polls.map((p) => ({
