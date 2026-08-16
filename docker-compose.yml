@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: poller
+      POSTGRES_PASSWORD: poller
+      POSTGRES_DB: poller
+    ports:
+      - "5433:5432"
+    volumes:
+      - poller_pgdata:/var/lib/postgresql/data
+
+volumes:
+  poller_pgdata:
