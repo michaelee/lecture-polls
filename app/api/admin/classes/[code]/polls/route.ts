@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAdminSession } from "@/lib/auth";
 import { MAX_CHOICES, MIN_CHOICES } from "@/lib/choices";
+import { absoluteUrl } from "@/lib/url";
 
 export async function POST(
   request: NextRequest,
@@ -12,7 +13,7 @@ export async function POST(
 
   const { code } = await params;
   const klass = await prisma.class.findUnique({ where: { code: code.toUpperCase() } });
-  const classUrl = new URL(`/admin/classes/${code}`, request.url);
+  const classUrl = absoluteUrl(`/admin/classes/${code}`, request);
   if (!klass) return NextResponse.redirect(classUrl, 303);
 
   const form = await request.formData();

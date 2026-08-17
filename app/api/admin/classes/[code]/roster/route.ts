@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Papa from "papaparse";
 import { prisma } from "@/lib/prisma";
 import { getAdminSession } from "@/lib/auth";
+import { absoluteUrl } from "@/lib/url";
 
 async function resolveClass(code: string) {
   return prisma.class.findUnique({ where: { code: code.toUpperCase() } });
@@ -17,7 +18,7 @@ export async function POST(
 
   const { code } = await params;
   const klass = await resolveClass(code);
-  const classUrl = new URL(`/admin/classes/${code}`, request.url);
+  const classUrl = absoluteUrl(`/admin/classes/${code}`, request);
   if (!klass) return NextResponse.redirect(classUrl, 303);
 
   const form = await request.formData();

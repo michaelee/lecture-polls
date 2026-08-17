@@ -2,15 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getStudentSession } from "@/lib/auth";
 import { isValidChoice } from "@/lib/choices";
+import { absoluteUrl } from "@/lib/url";
 
 export async function POST(request: NextRequest) {
   const session = await getStudentSession();
   const form = await request.formData();
   const classCode = String(form.get("classCode") ?? "");
-  const redirectUrl = new URL(`/c/${classCode}`, request.url);
+  const redirectUrl = absoluteUrl(`/c/${classCode}`, request);
 
   if (!session) {
-    return NextResponse.redirect(new URL(`/login?next=${encodeURIComponent(`/c/${classCode}`)}`, request.url), 303);
+    return NextResponse.redirect(
+      absoluteUrl(`/login?next=${encodeURIComponent(`/c/${classCode}`)}`, request),
+      303,
+    );
   }
 
   const pollId = String(form.get("pollId") ?? "");

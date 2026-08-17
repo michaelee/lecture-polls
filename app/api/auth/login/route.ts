@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { buildStudentSessionCookie } from "@/lib/auth";
+import { absoluteUrl } from "@/lib/url";
 
 export async function POST(request: NextRequest) {
   const form = await request.formData();
@@ -12,7 +13,7 @@ export async function POST(request: NextRequest) {
     .toUpperCase();
   const next = String(form.get("next") ?? "/");
 
-  const loginUrl = new URL("/login", request.url);
+  const loginUrl = absoluteUrl("/login", request);
   if (next.startsWith("/")) loginUrl.searchParams.set("next", next);
 
   if (!emailUsername || !campusId) {
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
 
   const cookie = await buildStudentSessionCookie(student.id);
   const target = next.startsWith("/") ? next : "/";
-  const res = NextResponse.redirect(new URL(target, request.url), 303);
+  const res = NextResponse.redirect(absoluteUrl(target, request), 303);
   res.cookies.set(cookie.name, cookie.value, cookie.options);
   return res;
 }

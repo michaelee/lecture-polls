@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAdminSession } from "@/lib/auth";
+import { absoluteUrl } from "@/lib/url";
 
 export async function POST(request: NextRequest) {
   const session = await getAdminSession();
@@ -12,7 +13,7 @@ export async function POST(request: NextRequest) {
   const name = String(form.get("name") ?? "").trim() || null;
   const term = String(form.get("term") ?? "").trim() || null;
 
-  const adminUrl = new URL("/admin", request.url);
+  const adminUrl = absoluteUrl("/admin", request);
 
   if (!code) {
     adminUrl.searchParams.set("error", "missing-code");
