@@ -22,6 +22,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      // Browser extensions (Dark Reader, etc.) inject attributes onto <html> like
+      // data-darkreader-* before React hydrates, which otherwise trips a hydration
+      // mismatch warning here on every page. Harmless; this just quiets that one.
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
