@@ -27,13 +27,23 @@ Then visit:
 
 ## Roster CSV format
 
+Columns, in this order: `firstName, lastName, emailUsername, campusId`. A header row is
+optional — the importer sniffs the first row and only treats it as a header if at least two
+of its cells look like one of the column names above (so `firstname`/`Last Name`/`username`
+all count, but a file that just starts straight into data works too):
+
 ```csv
 firstName,lastName,emailUsername,campusId
 Jane,Doe,jdoe123,A10000001
 John,Smith,jsmith45,A10000002
 ```
 
-Importing upserts: existing students (matched by `emailUsername`) get their name/campus ID
+```csv
+Jane,Doe,jdoe123,A10000001
+John,Smith,jsmith45,A10000002
+```
+
+Both import identically. Importing upserts: existing students (matched by `emailUsername`) get their name/campus ID
 refreshed, new students are created, and everyone in the file gets enrolled in that class.
 Nothing is ever removed by an import — only the explicit "Delete roster" button clears
 enrollments (it leaves students and poll history untouched, so you can safely re-import a

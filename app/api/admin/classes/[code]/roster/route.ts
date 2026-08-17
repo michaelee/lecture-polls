@@ -8,6 +8,25 @@ async function resolveClass(code: string) {
   return prisma.class.findUnique({ where: { code: code.toUpperCase() } });
 }
 
+// Column order when a file has no header row at all.
+const POSITIONAL_FIELDS = ["firstName", "lastName", "emailUsername", "campusId"] as const;
+
+const HEADER_ALIASES: Record<(typeof POSITIONAL_FIELDS)[number], string[]> = {
+  firstName: ["firstname", "first name", "first"],
+  lastName: ["lastname", "last name", "last"],
+  emailUsername: ["emailusername", "email username", "username", "email"],
+  campusId: ["campusid", "campus id", "id"],
+};
+
+/** True if a row's cells look like our column names rather than actual student data. */
+function looksLikeHeaderRow(row: string[]): boolean {
+  const cells = row.map((c) => c.trim().toLowerCase());
+  const recognized = POSITIONAL_FIELDS.filter((field) =>
+    HEADER_ALIASES[field].some((alias) => cells.includes(alias)),
+  ).length;
+  return recognized >= 2; // at least half the expected columns named explicitly
+}
+
 /** CSV import: upserts Student by emailUsername, then upserts the Enrollment for this class. */
 export async function POST(
   request: NextRequest,
@@ -29,29 +48,36 @@ export async function POST(
   }
 
   const text = await file.text();
-  const parsed = Papa.parse<Record<string, string>>(text, {
-    header: true,
-    skipEmptyLines: true,
-    transformHeader: (h) => h.trim().toLowerCase(),
-  });
+  // Parse as plain rows first (no header assumption) so we can tell whether the file
+  // actually has a header row before committing to one -- a file that opens straight
+  // into data would otherwise silently lose its first row to a fictitious header.
+  const { data: rawRows } = Papa.parse<string[]>(text, { skipEmptyLines: true });
+
+  const hasHeader = rawRows.length > 0 && looksLikeHeaderRow(rawRows[0]);
+  const headerRow = hasHeader ? rawRows[0].map((c) => c.trim().toLowerCase()) : null;
+  const dataRows = hasHeader ? rawRows.slice(1) : rawRows;
+
+  function cellFor(row: string[], field: (typeof POSITIONAL_FIELDS)[number]): string {
+    if (headerRow) {
+      for (const alias of HEADER_ALIASES[field]) {
+        const idx = headerRow.indexOf(alias);
+        if (idx !== -1) return (row[idx] ?? "").trim();
+      }
+      return "";
+    }
+    return (row[POSITIONAL_FIELDS.indexOf(field)] ?? "").trim();
+  }
 
   let imported = 0;
   let skipped = 0;
 
-  for (const row of parsed.data) {
-    const firstName = (row.firstname ?? row["first name"] ?? row.first ?? "").trim();
-    const lastName = (row.lastname ?? row["last name"] ?? row.last ?? "").trim();
-    const emailUsername = (
-      row.emailusername ??
-      row["email username"] ??
-      row.username ??
-      row.email ??
-      ""
-    )
-      .trim()
+  for (const row of dataRows) {
+    const firstName = cellFor(row, "firstName");
+    const lastName = cellFor(row, "lastName");
+    const emailUsername = cellFor(row, "emailUsername")
       .toLowerCase()
       .replace(/@.*$/, ""); // tolerate a full email address in the column too
-    const campusId = (row.campusid ?? row["campus id"] ?? row.id ?? "").trim().toUpperCase();
+    const campusId = cellFor(row, "campusId").toUpperCase();
 
     if (!firstName || !lastName || !emailUsername || !campusId) {
       skipped++;

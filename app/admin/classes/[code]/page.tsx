@@ -139,8 +139,9 @@ export default async function ClassDetailPage({
             Import
           </button>
           <p className="basis-full text-xs text-neutral-500">
-            Columns: firstName, lastName, emailUsername, campusId. Re-importing updates existing
-            students and adds new ones — it never removes anyone.
+            Columns, in this order: firstName, lastName, emailUsername, campusId. A header row
+            is optional — with or without one both work. Re-importing updates existing students
+            and adds new ones — it never removes anyone.
           </p>
         </form>
       </section>
