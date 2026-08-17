@@ -11,7 +11,6 @@ export async function POST(request: NextRequest) {
   const rawCode = String(form.get("code") ?? "");
   const code = rawCode.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
   const name = String(form.get("name") ?? "").trim() || null;
-  const term = String(form.get("term") ?? "").trim() || null;
 
   const adminUrl = absoluteUrl("/admin", request);
 
@@ -21,7 +20,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    await prisma.class.create({ data: { code, name, term } });
+    await prisma.class.create({ data: { code, name } });
   } catch {
     adminUrl.searchParams.set("error", "duplicate-code");
     return NextResponse.redirect(adminUrl, 303);

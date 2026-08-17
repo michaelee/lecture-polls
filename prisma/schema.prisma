@@ -11,7 +11,6 @@ model Class {
   id        String   @id @default(cuid())
   code      String   @unique // e.g. "CS440"
   name      String? // optional friendly label
-  term      String? // e.g. "Spring 2026"
   createdAt DateTime @default(now())
 
   enrollments Enrollment[]

@@ -6,7 +6,7 @@ async function main() {
   const klass = await prisma.class.upsert({
     where: { code: "CS440" },
     update: {},
-    create: { code: "CS440", name: "Demo Class", term: "Spring 2026" },
+    create: { code: "CS440", name: "Demo Class" },
   });
 
   const demoStudents = [

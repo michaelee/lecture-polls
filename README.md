@@ -77,3 +77,10 @@ clean roster at the start of a new semester).
 - **"Missed" polls**: computed live as *(all polls ever created for the class) −
   (polls that student answered)* — not stored, so it can't drift out of sync. This counts
   the currently-active poll too if the student hasn't answered it yet.
+- **Reusing a class code across semesters**: `Class.code` is globally unique, so teaching
+  CS440 again next semester means reusing the *same* class row (mass-delete the old roster,
+  re-import a fresh one) rather than creating a new one — which conveniently keeps the same
+  QR link stable across semesters, but also means poll history accumulates across every
+  semester on that one row. "Missed" would then count a new semester's students against
+  polls from a semester they were never enrolled in. Not an issue yet, but worth knowing
+  before this sees a second semester of use.
