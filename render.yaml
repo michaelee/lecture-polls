@@ -8,7 +8,11 @@ services:
     name: poller
     runtime: node
     plan: free
-    buildCommand: npm ci && npx prisma migrate deploy && npm run build
+    # --include=dev: NODE_ENV=production (set below) makes plain `npm ci` skip
+    # devDependencies, but next build needs tailwindcss/@tailwindcss/postcss/typescript
+    # from there. Those stay devDependencies (the running server doesn't need them) --
+    # this just forces them in for the build step specifically.
+    buildCommand: npm ci --include=dev && npx prisma migrate deploy && npm run build
     startCommand: npm start
     envVars:
       - key: DATABASE_URL
