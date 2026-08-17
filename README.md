@@ -5,8 +5,10 @@ A lightweight "clicker" polling app for running live multiple-choice polls in le
 - **Students** log in once (email username + campus ID), then scan a QR code / visit a
   persistent per-class link to answer whichever poll is currently active. Sessions are
   long-lived and there's no logout button, on purpose — see "Design notes" below.
-- **Admin** (you) manages class rosters (CSV import/export/mass-delete) and polls
-  (create, activate one-at-a-time, delete-with-warning) from `/admin`.
+- **Admin** (you) manages classes (create, delete-with-warning — deleting a class also
+  deletes any student who ends up enrolled nowhere else), rosters (CSV import/export/
+  mass-delete), and polls (create with a required label, reorder, activate one-at-a-time,
+  delete-with-warning) from `/admin`.
 
 ## Local development
 
