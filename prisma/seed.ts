@@ -31,7 +31,14 @@ async function main() {
   await prisma.poll.upsert({
     where: { classId_number: { classId: klass.id, number: 1 } },
     update: {},
-    create: { classId: klass.id, number: 1, label: "Demo poll", numChoices: 4, isActive: true },
+    create: {
+      classId: klass.id,
+      number: 1,
+      sortOrder: 1,
+      label: "Demo poll",
+      numChoices: 4,
+      isActive: true,
+    },
   });
 
   console.log("Seeded demo class CS440 with 3 students and 1 active poll.");

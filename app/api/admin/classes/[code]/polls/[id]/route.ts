@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAdminSession } from "@/lib/auth";
 
-/** Toggle a poll active/inactive. Activating deactivates every other poll in the class. */
+/**
+ * Updates a poll: either `{ isActive }` to toggle it active/inactive (activating
+ * deactivates every other poll in the class), or `{ move: "up" | "down" }` to swap its
+ * display position with the adjacent poll.
+ */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ code: string; id: string }> },
@@ -15,19 +19,45 @@ export async function PATCH(
   if (!klass) return NextResponse.json({ error: "not-found" }, { status: 404 });
 
   const body = await request.json().catch(() => ({}));
-  const isActive = Boolean(body.isActive);
 
-  await prisma.$transaction(async (tx) => {
-    if (isActive) {
-      await tx.poll.updateMany({
-        where: { classId: klass.id, isActive: true },
-        data: { isActive: false },
-      });
+  if (body.move === "up" || body.move === "down") {
+    const polls = await prisma.poll.findMany({
+      where: { classId: klass.id },
+      orderBy: [{ sortOrder: "asc" }, { number: "asc" }],
+      select: { id: true, sortOrder: true },
+    });
+    const index = polls.findIndex((p) => p.id === id);
+    if (index === -1) return NextResponse.json({ error: "not-found" }, { status: 404 });
+
+    const swapIndex = body.move === "up" ? index - 1 : index + 1;
+    if (swapIndex < 0 || swapIndex >= polls.length) {
+      return NextResponse.json({ ok: true }); // already at that end, nothing to do
     }
-    await tx.poll.update({ where: { id }, data: { isActive } });
-  });
 
-  return NextResponse.json({ ok: true });
+    const current = polls[index];
+    const neighbor = polls[swapIndex];
+    await prisma.$transaction([
+      prisma.poll.update({ where: { id: current.id }, data: { sortOrder: neighbor.sortOrder } }),
+      prisma.poll.update({ where: { id: neighbor.id }, data: { sortOrder: current.sortOrder } }),
+    ]);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (typeof body.isActive === "boolean") {
+    const isActive = body.isActive;
+    await prisma.$transaction(async (tx) => {
+      if (isActive) {
+        await tx.poll.updateMany({
+          where: { classId: klass.id, isActive: true },
+          data: { isActive: false },
+        });
+      }
+      await tx.poll.update({ where: { id }, data: { isActive } });
+    });
+    return NextResponse.json({ ok: true });
+  }
+
+  return NextResponse.json({ error: "no-op" }, { status: 400 });
 }
 
 /**

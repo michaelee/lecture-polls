@@ -4,7 +4,7 @@ import { choicesFor } from "./choices";
 export type LiveResults =
   | { poll: null }
   | {
-      poll: { id: string; number: number; label: string | null; numChoices: number };
+      poll: { id: string; label: string; numChoices: number };
       counts: Record<string, number>;
       total: number;
       enrolledCount: number;
@@ -33,7 +33,7 @@ export async function getLiveResults(classId: string): Promise<LiveResults> {
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
 
   return {
-    poll: { id: poll.id, number: poll.number, label: poll.label, numChoices: poll.numChoices },
+    poll: { id: poll.id, label: poll.label, numChoices: poll.numChoices },
     counts,
     total,
     enrolledCount,

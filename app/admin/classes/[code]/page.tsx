@@ -6,13 +6,18 @@ import { requireAdmin } from "@/lib/auth";
 import { getRosterWithStats } from "@/lib/roster";
 import RosterActions from "./RosterActions";
 import PollsPanel from "./PollsPanel";
+import ClassActions from "./ClassActions";
+
+const POLL_ERROR_MESSAGES: Record<string, string> = {
+  "missing-label": "Give the poll a label before creating it.",
+};
 
 export default async function ClassDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ code: string }>;
-  searchParams: Promise<{ imported?: string; skipped?: string }>;
+  searchParams: Promise<{ imported?: string; skipped?: string; error?: string }>;
 }) {
   await requireAdmin();
   const { code: rawCode } = await params;
@@ -26,7 +31,7 @@ export default async function ClassDetailPage({
     getRosterWithStats(klass.id),
     prisma.poll.findMany({
       where: { classId: klass.id },
-      orderBy: { number: "desc" },
+      orderBy: [{ sortOrder: "asc" }, { number: "asc" }],
       include: { _count: { select: { responses: true } } },
     }),
   ]);
@@ -37,16 +42,19 @@ export default async function ClassDetailPage({
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-10 p-8">
-      <div>
-        <Link href="/admin" className="text-sm text-neutral-500">
-          &larr; All classes
-        </Link>
-        <h1 className="mt-1 text-xl font-semibold">
-          {klass.code}
-          {klass.name && (
-            <span className="ml-2 text-base font-normal text-neutral-500">{klass.name}</span>
-          )}
-        </h1>
+      <div className="flex items-start justify-between">
+        <div>
+          <Link href="/admin" className="text-sm text-neutral-500">
+            &larr; All classes
+          </Link>
+          <h1 className="mt-1 text-xl font-semibold">
+            {klass.code}
+            {klass.name && (
+              <span className="ml-2 text-base font-normal text-neutral-500">{klass.name}</span>
+            )}
+          </h1>
+        </div>
+        <ClassActions code={klass.code} />
       </div>
 
       <section className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
@@ -153,11 +161,15 @@ export default async function ClassDetailPage({
             View live results
           </Link>
         </div>
+        {sp.error && POLL_ERROR_MESSAGES[sp.error] && (
+          <p className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+            {POLL_ERROR_MESSAGES[sp.error]}
+          </p>
+        )}
         <PollsPanel
           code={klass.code}
           polls={polls.map((p) => ({
             id: p.id,
-            number: p.number,
             label: p.label,
             numChoices: p.numChoices,
             isActive: p.isActive,
@@ -171,9 +183,10 @@ export default async function ClassDetailPage({
           className="mt-4 flex flex-wrap items-end gap-3"
         >
           <label className="flex flex-col gap-1 text-sm">
-            Label (optional)
+            Label
             <input
               name="label"
+              required
               placeholder="Recursion base case"
               className="rounded-md border border-neutral-300 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900"
             />

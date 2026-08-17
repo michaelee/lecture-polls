@@ -45,8 +45,9 @@ model Enrollment {
 model Poll {
   id         String   @id @default(cuid())
   classId    String
-  number     Int // sequential per class, for display (1, 2, 3, ...)
-  label      String? // optional admin-facing note about the poll
+  number     Int // sequential per class, in creation order -- internal disambiguation only, never shown
+  label      String // required, shown everywhere in place of the number; doesn't need to be unique
+  sortOrder  Int // display order on the class page; independent of creation order, manually reorderable
   numChoices Int      @default(4) // how many of A-E are valid, 2-5
   isActive   Boolean  @default(false)
   createdAt  DateTime @default(now())

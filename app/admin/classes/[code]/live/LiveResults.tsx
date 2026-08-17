@@ -59,10 +59,8 @@ export default function LiveResults({ code, initial }: { code: string; initial: 
     <div>
       <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <p className="text-sm uppercase tracking-wide text-neutral-500">
-            {code} · Poll {poll.number}
-          </p>
-          {poll.label && <h2 className="text-lg font-medium">{poll.label}</h2>}
+          <p className="text-sm uppercase tracking-wide text-neutral-500">{code}</p>
+          <h2 className="text-lg font-medium">{poll.label}</h2>
         </div>
         <p className="text-sm text-neutral-500">
           {total} of {enrolledCount} responded

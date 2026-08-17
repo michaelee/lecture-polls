@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 
 export type PollRow = {
   id: string;
-  number: number;
-  label: string | null;
+  label: string;
   numChoices: number;
   isActive: boolean;
   responseCount: number;
@@ -40,6 +39,24 @@ export default function PollsPanel({
     }
   }
 
+  async function move(poll: PollRow, direction: "up" | "down") {
+    setPendingId(poll.id);
+    try {
+      const res = await fetch(`/api/admin/classes/${code}/polls/${poll.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ move: direction }),
+      });
+      if (!res.ok) {
+        alert("Failed to reorder poll.");
+        return;
+      }
+      router.refresh();
+    } finally {
+      setPendingId(null);
+    }
+  }
+
   async function deletePoll(poll: PollRow) {
     setPendingId(poll.id);
     try {
@@ -49,7 +66,7 @@ export default function PollsPanel({
       if (res.status === 409) {
         const data = await res.json();
         const ok = confirm(
-          `Poll ${poll.number} has ${data.responseCount} response(s). Delete it anyway? This can't be undone.`,
+          `"${poll.label}" has ${data.responseCount} response(s). Delete it anyway? This can't be undone.`,
         );
         if (!ok) return;
         res = await fetch(`/api/admin/classes/${code}/polls/${poll.id}?force=true`, {
@@ -72,17 +89,36 @@ export default function PollsPanel({
 
   return (
     <ul className="flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
-      {polls.map((p) => (
+      {polls.map((p, i) => (
         <li key={p.id} className="flex items-center justify-between gap-3 p-3">
-          <div>
-            <p className="font-medium">
-              Poll {p.number}
-              {p.label && <span className="font-normal text-neutral-500"> · {p.label}</span>}
-            </p>
-            <p className="text-xs text-neutral-500">
-              A–{String.fromCharCode(64 + p.numChoices)} · {p.responseCount} response
-              {p.responseCount === 1 ? "" : "s"}
-            </p>
+          <div className="flex items-center gap-1">
+            <div className="flex flex-col">
+              <button
+                type="button"
+                disabled={pendingId === p.id || i === 0}
+                onClick={() => move(p, "up")}
+                aria-label="Move up"
+                className="leading-none text-neutral-400 hover:text-neutral-700 disabled:opacity-20 dark:hover:text-neutral-200"
+              >
+                ▲
+              </button>
+              <button
+                type="button"
+                disabled={pendingId === p.id || i === polls.length - 1}
+                onClick={() => move(p, "down")}
+                aria-label="Move down"
+                className="leading-none text-neutral-400 hover:text-neutral-700 disabled:opacity-20 dark:hover:text-neutral-200"
+              >
+                ▼
+              </button>
+            </div>
+            <div>
+              <p className="font-medium">{p.label}</p>
+              <p className="text-xs text-neutral-500">
+                A–{String.fromCharCode(64 + p.numChoices)} · {p.responseCount} response
+                {p.responseCount === 1 ? "" : "s"}
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-3 text-sm">
             {p.isActive && (

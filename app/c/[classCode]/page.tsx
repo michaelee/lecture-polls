@@ -72,10 +72,8 @@ export default async function ClassPollPage({
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
       <div>
-        <p className="text-sm uppercase tracking-wide text-neutral-500">
-          {klass.code} · Poll {activePoll.number}
-        </p>
-        {activePoll.label && <h1 className="text-xl font-semibold">{activePoll.label}</h1>}
+        <p className="text-sm uppercase tracking-wide text-neutral-500">{klass.code}</p>
+        <h1 className="text-xl font-semibold">{activePoll.label}</h1>
       </div>
 
       {error && (
