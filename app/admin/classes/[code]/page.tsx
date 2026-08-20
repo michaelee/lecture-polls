@@ -3,9 +3,7 @@ import { notFound } from "next/navigation";
 import QRCode from "qrcode";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
-import { getRosterWithStats } from "@/lib/roster";
 import { getResultsByPoll } from "@/lib/results";
-import RosterActions from "./RosterActions";
 import PollsPanel from "./PollsPanel";
 import ClassActions from "./ClassActions";
 
@@ -18,7 +16,7 @@ export default async function ClassDetailPage({
   searchParams,
 }: {
   params: Promise<{ code: string }>;
-  searchParams: Promise<{ imported?: string; skipped?: string; error?: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   await requireAdmin();
   const { code: rawCode } = await params;
@@ -28,8 +26,8 @@ export default async function ClassDetailPage({
   const klass = await prisma.class.findUnique({ where: { code } });
   if (!klass) notFound();
 
-  const [roster, polls, resultsByPoll] = await Promise.all([
-    getRosterWithStats(klass.id),
+  const [enrolledCount, polls, resultsByPoll] = await Promise.all([
+    prisma.enrollment.count({ where: { classId: klass.id } }),
     prisma.poll.findMany({
       where: { classId: klass.id },
       orderBy: [{ sortOrder: "asc" }, { number: "asc" }],
@@ -75,85 +73,6 @@ export default async function ClassDetailPage({
           </p>
           <code className="mt-1 block text-sm">{pollLink}</code>
         </div>
-      </section>
-
-      <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-medium">Roster ({roster.length})</h2>
-          <div className="flex items-center gap-4 text-sm">
-            <a href={`/api/admin/classes/${klass.code}/export`} className="underline">
-              Download CSV
-            </a>
-            <RosterActions code={klass.code} />
-          </div>
-        </div>
-
-        {sp.imported && (
-          <p className="mb-3 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">
-            Imported {sp.imported} student{sp.imported === "1" ? "" : "s"}.
-            {sp.skipped ? ` Skipped ${sp.skipped} row(s) with missing fields.` : ""}
-          </p>
-        )}
-
-        <div className="overflow-x-auto rounded-lg border border-neutral-200 dark:border-neutral-800">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-neutral-50 dark:bg-neutral-900">
-              <tr>
-                <th className="p-2">Name</th>
-                <th className="p-2">Username</th>
-                <th className="p-2">Campus ID</th>
-                <th className="p-2 text-right">Answered</th>
-                <th className="p-2 text-right">Missed</th>
-              </tr>
-            </thead>
-            <tbody>
-              {roster.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="p-4 text-center text-neutral-500">
-                    No students yet.
-                  </td>
-                </tr>
-              )}
-              {roster.map((r) => (
-                <tr
-                  key={r.enrollmentId}
-                  className="border-t border-neutral-200 dark:border-neutral-800"
-                >
-                  <td className="p-2">
-                    {r.firstName} {r.lastName}
-                  </td>
-                  <td className="p-2">{r.emailUsername}</td>
-                  <td className="p-2">{r.campusId}</td>
-                  <td className="p-2 text-right">{r.answered}</td>
-                  <td className="p-2 text-right">{r.missed}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <form
-          action={`/api/admin/classes/${klass.code}/roster`}
-          method="POST"
-          encType="multipart/form-data"
-          className="mt-4 flex flex-wrap items-end gap-3"
-        >
-          <label className="flex flex-col gap-1 text-sm">
-            Import roster CSV
-            <input type="file" name="file" accept=".csv,text/csv" required className="text-sm" />
-          </label>
-          <button
-            type="submit"
-            className="rounded-lg bg-neutral-900 px-4 py-2 text-sm text-white dark:bg-neutral-100 dark:text-neutral-900"
-          >
-            Import
-          </button>
-          <p className="basis-full text-xs text-neutral-500">
-            Columns, in this order: firstName, lastName, emailUsername, campusId. A header row
-            is optional — with or without one both work. Re-importing updates existing students
-            and adds new ones — it never removes anyone.
-          </p>
-        </form>
       </section>
 
       <section>
@@ -220,6 +139,19 @@ export default async function ClassDetailPage({
           </button>
         </form>
       </section>
+
+      <Link
+        href={`/admin/classes/${klass.code}/roster`}
+        className="flex items-center justify-between rounded-lg border border-neutral-200 p-4 hover:bg-neutral-50 dark:border-neutral-800 dark:hover:bg-neutral-900"
+      >
+        <div>
+          <h2 className="text-sm font-medium text-neutral-500">Roster</h2>
+          <p className="text-lg font-semibold">
+            {enrolledCount} student{enrolledCount === 1 ? "" : "s"}
+          </p>
+        </div>
+        <span className="text-sm underline">Manage roster &rarr;</span>
+      </Link>
     </main>
   );
 }

@@ -37,7 +37,7 @@ export async function POST(
 
   const { code } = await params;
   const klass = await resolveClass(code);
-  const classUrl = absoluteUrl(`/admin/classes/${code}`, request);
+  const classUrl = absoluteUrl(`/admin/classes/${code}/roster`, request);
   if (!klass) return NextResponse.redirect(classUrl, 303);
 
   const form = await request.formData();
