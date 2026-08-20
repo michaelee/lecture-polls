@@ -4,6 +4,7 @@ import QRCode from "qrcode";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { getRosterWithStats } from "@/lib/roster";
+import { getResultsByPoll } from "@/lib/results";
 import RosterActions from "./RosterActions";
 import PollsPanel from "./PollsPanel";
 import ClassActions from "./ClassActions";
@@ -27,13 +28,14 @@ export default async function ClassDetailPage({
   const klass = await prisma.class.findUnique({ where: { code } });
   if (!klass) notFound();
 
-  const [roster, polls] = await Promise.all([
+  const [roster, polls, resultsByPoll] = await Promise.all([
     getRosterWithStats(klass.id),
     prisma.poll.findMany({
       where: { classId: klass.id },
       orderBy: [{ sortOrder: "asc" }, { number: "asc" }],
       include: { _count: { select: { responses: true } } },
     }),
+    getResultsByPoll(klass.id),
   ]);
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
@@ -174,6 +176,7 @@ export default async function ClassDetailPage({
             numChoices: p.numChoices,
             isActive: p.isActive,
             responseCount: p._count.responses,
+            counts: resultsByPoll.get(p.id) ?? {},
           }))}
         />
 

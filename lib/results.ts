@@ -39,3 +39,22 @@ export async function getLiveResults(classId: string): Promise<LiveResults> {
     enrolledCount,
   };
 }
+
+/** Per-choice response counts for every poll in a class, keyed by pollId, in one query. */
+export async function getResultsByPoll(
+  classId: string,
+): Promise<Map<string, Record<string, number>>> {
+  const grouped = await prisma.response.groupBy({
+    by: ["pollId", "choice"],
+    where: { poll: { classId } },
+    _count: { choice: true },
+  });
+
+  const byPoll = new Map<string, Record<string, number>>();
+  for (const g of grouped) {
+    const counts = byPoll.get(g.pollId) ?? {};
+    counts[g.choice] = g._count.choice;
+    byPoll.set(g.pollId, counts);
+  }
+  return byPoll;
+}
