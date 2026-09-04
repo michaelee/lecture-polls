@@ -48,7 +48,7 @@ model Poll {
   number     Int // sequential per class, in creation order -- internal disambiguation only, never shown
   label      String // required, shown everywhere in place of the number; doesn't need to be unique
   sortOrder  Int // display order on the class page; independent of creation order, manually reorderable
-  numChoices Int      @default(4) // how many of A-E are valid, 2-5
+  numChoices Int      @default(4) // how many of A-E are valid, 1-5 (1 = single-button attendance check-in)
   isActive   Boolean  @default(false)
   createdAt  DateTime @default(now())
 

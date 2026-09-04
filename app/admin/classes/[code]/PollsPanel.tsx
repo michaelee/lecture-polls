@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { choicesFor } from "@/lib/choices";
+import { choicesFor, isAttendancePoll } from "@/lib/choices";
 
 export type PollRow = {
   id: string;
@@ -171,8 +171,9 @@ export default function PollsPanel({
               <div>
                 <p className="font-medium">{p.label}</p>
                 <p className="text-xs text-neutral-500">
-                  A–{String.fromCharCode(64 + p.numChoices)} · {p.responseCount} response
-                  {p.responseCount === 1 ? "" : "s"}
+                  {isAttendancePoll(p.numChoices)
+                    ? `Attendance · ${p.responseCount} checked in`
+                    : `A–${String.fromCharCode(64 + p.numChoices)} · ${p.responseCount} response${p.responseCount === 1 ? "" : "s"}`}
                 </p>
               </div>
             </div>
@@ -200,7 +201,9 @@ export default function PollsPanel({
               </button>
             </div>
           </div>
-          <PollResultBar counts={p.counts} numChoices={p.numChoices} />
+          {!isAttendancePoll(p.numChoices) && (
+            <PollResultBar counts={p.counts} numChoices={p.numChoices} />
+          )}
         </li>
       ))}
     </ul>

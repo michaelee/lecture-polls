@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { choicesFor } from "@/lib/choices";
+import { choicesFor, isAttendancePoll } from "@/lib/choices";
 import type { LiveResults as Results } from "@/lib/results";
 
 const POLL_INTERVAL_MS = 3000;
@@ -53,40 +53,59 @@ export default function LiveResults({ code, initial }: { code: string; initial: 
   }
 
   const { poll, counts, total, enrolledCount } = results;
+  const attendance = isAttendancePoll(poll.numChoices);
   const choices = choicesFor(poll.numChoices);
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-baseline justify-between gap-2">
+      <div
+        className={
+          attendance
+            ? "mb-6"
+            : "mb-6 flex flex-wrap items-baseline justify-between gap-2"
+        }
+      >
         <div>
           <p className="text-sm uppercase tracking-wide text-neutral-500">{code}</p>
           <h2 className="text-lg font-medium">{poll.label}</h2>
         </div>
-        <p className="text-sm text-neutral-500">
-          {total} of {enrolledCount} responded
-        </p>
+        {!attendance && (
+          <p className="text-sm text-neutral-500">
+            {total} of {enrolledCount} responded
+          </p>
+        )}
       </div>
 
-      <div className="flex flex-col gap-3">
-        {choices.map((c) => {
-          const count = counts[c] ?? 0;
-          const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-          return (
-            <div key={c} className="flex items-center gap-3">
-              <span className="w-6 text-xl font-bold">{c}</span>
-              <div className="h-9 flex-1 overflow-hidden rounded-md bg-neutral-100 dark:bg-neutral-900">
-                <div
-                  className="h-full rounded-md bg-neutral-900 transition-[width] duration-500 ease-out dark:bg-neutral-100"
-                  style={{ width: `${pct}%` }}
-                />
+      {attendance ? (
+        <div className="flex flex-col items-center gap-1 py-8 text-center">
+          <p className="text-6xl font-bold tabular-nums">{total}</p>
+          <p className="text-neutral-500">
+            of {enrolledCount} checked in
+            {enrolledCount > 0 && ` (${Math.round((total / enrolledCount) * 100)}%)`}
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {choices.map((c) => {
+            const count = counts[c] ?? 0;
+            const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+            return (
+              <div key={c} className="flex items-center gap-3">
+                <span className="w-6 text-xl font-bold">{c}</span>
+                <div className="h-9 flex-1 overflow-hidden rounded-md bg-neutral-100 dark:bg-neutral-900">
+                  <div
+                    className="h-full rounded-md bg-neutral-900 transition-[width] duration-500 ease-out dark:bg-neutral-100"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                <span className="w-24 text-right text-sm text-neutral-500">
+                  {count} ({pct}%)
+                </span>
               </div>
-              <span className="w-24 text-right text-sm text-neutral-500">
-                {count} ({pct}%)
-              </span>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       <p className="mt-4 text-right text-xs text-neutral-400">
         {updatedAt

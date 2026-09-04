@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireStudent } from "@/lib/auth";
-import { choicesFor } from "@/lib/choices";
+import { choicesFor, isAttendancePoll } from "@/lib/choices";
 
 const ERROR_MESSAGES: Record<string, string> = {
   "poll-closed": "That poll isn't open anymore.",
@@ -68,6 +68,7 @@ export default async function ClassPollPage({
   });
 
   const choices = choicesFor(activePoll.numChoices);
+  const attendance = isAttendancePoll(activePoll.numChoices);
 
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-6 p-8 text-center">
@@ -81,32 +82,52 @@ export default async function ClassPollPage({
           {ERROR_MESSAGES[error] ?? "Something went wrong. Try again."}
         </p>
       )}
-      {submitted && !error && (
+      {submitted && !error && !attendance && (
         <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-950 dark:text-green-300">
           Answer recorded{existingResponse ? ` (${existingResponse.choice})` : ""}. You can
           change it anytime while the poll is open.
         </p>
       )}
 
-      <div className="flex flex-wrap justify-center gap-3">
-        {choices.map((c) => (
-          <form key={c} action="/api/responses" method="POST">
+      {attendance ? (
+        existingResponse ? (
+          <div className="rounded-xl border-2 border-neutral-900 bg-neutral-900 px-8 py-6 text-xl font-bold text-white dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900">
+            ✓ You&apos;re checked in
+          </div>
+        ) : (
+          <form action="/api/responses" method="POST">
             <input type="hidden" name="pollId" value={activePoll.id} />
             <input type="hidden" name="classCode" value={klass.code} />
-            <input type="hidden" name="choice" value={c} />
+            <input type="hidden" name="choice" value="A" />
             <button
               type="submit"
-              className={`w-20 rounded-xl border-2 px-4 py-6 text-2xl font-bold transition-colors sm:w-24 ${
-                existingResponse?.choice === c
-                  ? "border-neutral-900 bg-neutral-900 text-white dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900"
-                  : "border-neutral-300 dark:border-neutral-700"
-              }`}
+              className="rounded-xl border-2 border-neutral-300 px-8 py-6 text-xl font-bold transition-colors dark:border-neutral-700"
             >
-              {c}
+              I&apos;m here
             </button>
           </form>
-        ))}
-      </div>
+        )
+      ) : (
+        <div className="flex flex-wrap justify-center gap-3">
+          {choices.map((c) => (
+            <form key={c} action="/api/responses" method="POST">
+              <input type="hidden" name="pollId" value={activePoll.id} />
+              <input type="hidden" name="classCode" value={klass.code} />
+              <input type="hidden" name="choice" value={c} />
+              <button
+                type="submit"
+                className={`w-20 rounded-xl border-2 px-4 py-6 text-2xl font-bold transition-colors sm:w-24 ${
+                  existingResponse?.choice === c
+                    ? "border-neutral-900 bg-neutral-900 text-white dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900"
+                    : "border-neutral-300 dark:border-neutral-700"
+                }`}
+              >
+                {c}
+              </button>
+            </form>
+          ))}
+        </div>
+      )}
     </main>
   );
 }

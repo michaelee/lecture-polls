@@ -120,9 +120,9 @@ export default async function ClassDetailPage({
               defaultValue="4"
               className="rounded-md border border-neutral-300 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900"
             >
-              {[2, 3, 4, 5].map((n) => (
+              {[1, 2, 3, 4, 5].map((n) => (
                 <option key={n} value={n}>
-                  {n} (A–{String.fromCharCode(64 + n)})
+                  {n === 1 ? "1 (attendance check-in)" : `${n} (A–${String.fromCharCode(64 + n)})`}
                 </option>
               ))}
             </select>

@@ -8,7 +8,8 @@ A lightweight "clicker" polling app for running live multiple-choice polls in le
 - **Admin** (you) manages classes (create, delete-with-warning — deleting a class also
   deletes any student who ends up enrolled nowhere else), rosters (CSV import/export/
   mass-delete), and polls (create with a required label, reorder, activate one-at-a-time,
-  delete-with-warning) from `/admin`.
+  delete-with-warning) from `/admin`. A poll can also be a **1-choice attendance
+  check-in** instead of a real question — see below.
 
 ## Local development
 
@@ -50,6 +51,15 @@ refreshed, new students are created, and everyone in the file gets enrolled in t
 Nothing is ever removed by an import — only the explicit "Delete roster" button clears
 enrollments (it leaves students and poll history untouched, so you can safely re-import a
 clean roster at the start of a new semester).
+
+## Attendance polls
+
+Choosing **1 (attendance check-in)** when creating a poll makes it a plain "I'm here"
+button instead of A-E choices — for taking attendance when there's no real question to
+ask. Students just tap it; there's nothing to choose between, so the admin list, the
+live-results view (a big "N of M checked in" number instead of a per-choice
+breakdown), and the CSV export/roster's answered/missed counts all treat it as a
+one-tap check-in rather than a multiple-choice question.
 
 ## Deploying to Render
 
