@@ -87,22 +87,11 @@ export default async function ClassDetailPage({
             {POLL_ERROR_MESSAGES[sp.error]}
           </p>
         )}
-        <PollsPanel
-          code={klass.code}
-          polls={polls.map((p) => ({
-            id: p.id,
-            label: p.label,
-            numChoices: p.numChoices,
-            isActive: p.isActive,
-            responseCount: p._count.responses,
-            counts: resultsByPoll.get(p.id) ?? {},
-          }))}
-        />
 
         <form
           action={`/api/admin/classes/${klass.code}/polls`}
           method="POST"
-          className="mt-4 flex flex-wrap items-end gap-3"
+          className="mb-4 flex flex-wrap items-end gap-3"
         >
           <label className="flex flex-col gap-1 text-sm">
             Label
@@ -138,6 +127,18 @@ export default async function ClassDetailPage({
             + New poll
           </button>
         </form>
+
+        <PollsPanel
+          code={klass.code}
+          polls={polls.map((p) => ({
+            id: p.id,
+            label: p.label,
+            numChoices: p.numChoices,
+            isActive: p.isActive,
+            responseCount: p._count.responses,
+            counts: resultsByPoll.get(p.id) ?? {},
+          }))}
+        />
       </section>
 
       <Link
