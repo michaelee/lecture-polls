@@ -75,6 +75,7 @@ export default function PollsPanel({
 }) {
   const router = useRouter();
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [showCompleted, setShowCompleted] = useState(false);
 
   async function toggleActive(poll: PollRow) {
     setPendingId(poll.id);
@@ -94,13 +95,13 @@ export default function PollsPanel({
     }
   }
 
-  async function move(poll: PollRow, direction: "up" | "down") {
+  async function swap(poll: PollRow, neighbor: PollRow) {
     setPendingId(poll.id);
     try {
       const res = await fetch(`/api/admin/classes/${code}/polls/${poll.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ move: direction }),
+        body: JSON.stringify({ swapWith: neighbor.id }),
       });
       if (!res.ok) {
         alert("Failed to reorder poll.");
@@ -142,70 +143,102 @@ export default function PollsPanel({
     return <p className="text-sm text-neutral-500">No polls yet — create one below.</p>;
   }
 
+  // Polls that have already collected responses are "completed" and tucked away, except
+  // the live one -- hiding the poll you're currently running would be confusing.
+  const pending = polls.filter((p) => p.isActive || p.responseCount === 0);
+  const completed = polls.filter((p) => !p.isActive && p.responseCount > 0);
+
+  function renderList(rows: PollRow[]) {
+    return (
+      <ul className="flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
+        {rows.map((p, i) => (
+          <li key={p.id} className="flex flex-col gap-3 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-1">
+                <div className="flex flex-col">
+                  <button
+                    type="button"
+                    disabled={pendingId === p.id || i === 0}
+                    onClick={() => swap(p, rows[i - 1])}
+                    aria-label="Move up"
+                    className="leading-none text-neutral-400 hover:text-neutral-700 disabled:opacity-20 dark:hover:text-neutral-200"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pendingId === p.id || i === rows.length - 1}
+                    onClick={() => swap(p, rows[i + 1])}
+                    aria-label="Move down"
+                    className="leading-none text-neutral-400 hover:text-neutral-700 disabled:opacity-20 dark:hover:text-neutral-200"
+                  >
+                    ▼
+                  </button>
+                </div>
+                <div>
+                  <p className="font-medium">{p.label}</p>
+                  <p className="text-xs text-neutral-500">
+                    {isAttendancePoll(p.numChoices)
+                      ? `Attendance · ${p.responseCount} checked in`
+                      : `A–${String.fromCharCode(64 + p.numChoices)} · ${p.responseCount} response${p.responseCount === 1 ? "" : "s"}`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 text-sm">
+                {p.isActive && (
+                  <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
+                    Active
+                  </span>
+                )}
+                <button
+                  type="button"
+                  disabled={pendingId === p.id}
+                  onClick={() => toggleActive(p)}
+                  className="underline disabled:opacity-50"
+                >
+                  {p.isActive ? "Deactivate" : "Activate"}
+                </button>
+                <button
+                  type="button"
+                  disabled={pendingId === p.id}
+                  onClick={() => deletePoll(p)}
+                  className="text-red-600 underline disabled:opacity-50 dark:text-red-400"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+            {!isAttendancePoll(p.numChoices) && (
+              <PollResultBar counts={p.counts} numChoices={p.numChoices} />
+            )}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
   return (
-    <ul className="flex flex-col divide-y divide-neutral-200 rounded-lg border border-neutral-200 dark:divide-neutral-800 dark:border-neutral-800">
-      {polls.map((p, i) => (
-        <li key={p.id} className="flex flex-col gap-3 p-3">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-1">
-              <div className="flex flex-col">
-                <button
-                  type="button"
-                  disabled={pendingId === p.id || i === 0}
-                  onClick={() => move(p, "up")}
-                  aria-label="Move up"
-                  className="leading-none text-neutral-400 hover:text-neutral-700 disabled:opacity-20 dark:hover:text-neutral-200"
-                >
-                  ▲
-                </button>
-                <button
-                  type="button"
-                  disabled={pendingId === p.id || i === polls.length - 1}
-                  onClick={() => move(p, "down")}
-                  aria-label="Move down"
-                  className="leading-none text-neutral-400 hover:text-neutral-700 disabled:opacity-20 dark:hover:text-neutral-200"
-                >
-                  ▼
-                </button>
-              </div>
-              <div>
-                <p className="font-medium">{p.label}</p>
-                <p className="text-xs text-neutral-500">
-                  {isAttendancePoll(p.numChoices)
-                    ? `Attendance · ${p.responseCount} checked in`
-                    : `A–${String.fromCharCode(64 + p.numChoices)} · ${p.responseCount} response${p.responseCount === 1 ? "" : "s"}`}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 text-sm">
-              {p.isActive && (
-                <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700 dark:bg-green-950 dark:text-green-300">
-                  Active
-                </span>
-              )}
-              <button
-                type="button"
-                disabled={pendingId === p.id}
-                onClick={() => toggleActive(p)}
-                className="underline disabled:opacity-50"
-              >
-                {p.isActive ? "Deactivate" : "Activate"}
-              </button>
-              <button
-                type="button"
-                disabled={pendingId === p.id}
-                onClick={() => deletePoll(p)}
-                className="text-red-600 underline disabled:opacity-50 dark:text-red-400"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-          {!isAttendancePoll(p.numChoices) && (
-            <PollResultBar counts={p.counts} numChoices={p.numChoices} />
-          )}
-        </li>
-      ))}
-    </ul>
+    <div className="flex flex-col gap-3">
+      {pending.length > 0 ? (
+        renderList(pending)
+      ) : (
+        <p className="text-sm text-neutral-500">No pending polls — create one above.</p>
+      )}
+
+      {completed.length > 0 && (
+        <>
+          <button
+            type="button"
+            onClick={() => setShowCompleted((v) => !v)}
+            aria-expanded={showCompleted}
+            className="self-start text-sm text-neutral-500 underline"
+          >
+            {showCompleted ? "Hide" : "Show"} {completed.length} completed poll
+            {completed.length === 1 ? "" : "s"}
+          </button>
+          {showCompleted && renderList(completed)}
+        </>
+      )}
+    </div>
   );
 }

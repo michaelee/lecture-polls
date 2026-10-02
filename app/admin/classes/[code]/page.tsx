@@ -30,7 +30,7 @@ export default async function ClassDetailPage({
     prisma.enrollment.count({ where: { classId: klass.id } }),
     prisma.poll.findMany({
       where: { classId: klass.id },
-      orderBy: [{ sortOrder: "asc" }, { number: "asc" }],
+      orderBy: [{ sortOrder: "desc" }, { number: "desc" }],
       include: { _count: { select: { responses: true } } },
     }),
     getResultsByPoll(klass.id),

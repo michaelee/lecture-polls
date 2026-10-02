@@ -4,8 +4,9 @@ import { getAdminSession } from "@/lib/auth";
 
 /**
  * Updates a poll: either `{ isActive }` to toggle it active/inactive (activating
- * deactivates every other poll in the class), or `{ move: "up" | "down" }` to swap its
- * display position with the adjacent poll.
+ * deactivates every other poll in the class), or `{ swapWith: pollId }` to swap its
+ * display position with another poll in the class (the client picks the neighbor, since
+ * it knows which polls are currently visible vs. collapsed).
  */
 export async function PATCH(
   request: NextRequest,
@@ -20,22 +21,19 @@ export async function PATCH(
 
   const body = await request.json().catch(() => ({}));
 
-  if (body.move === "up" || body.move === "down") {
-    const polls = await prisma.poll.findMany({
-      where: { classId: klass.id },
-      orderBy: [{ sortOrder: "asc" }, { number: "asc" }],
-      select: { id: true, sortOrder: true },
-    });
-    const index = polls.findIndex((p) => p.id === id);
-    if (index === -1) return NextResponse.json({ error: "not-found" }, { status: 404 });
+  if (typeof body.swapWith === "string") {
+    const [current, neighbor] = await Promise.all([
+      prisma.poll.findFirst({
+        where: { id, classId: klass.id },
+        select: { id: true, sortOrder: true },
+      }),
+      prisma.poll.findFirst({
+        where: { id: body.swapWith, classId: klass.id },
+        select: { id: true, sortOrder: true },
+      }),
+    ]);
+    if (!current || !neighbor) return NextResponse.json({ error: "not-found" }, { status: 404 });
 
-    const swapIndex = body.move === "up" ? index - 1 : index + 1;
-    if (swapIndex < 0 || swapIndex >= polls.length) {
-      return NextResponse.json({ ok: true }); // already at that end, nothing to do
-    }
-
-    const current = polls[index];
-    const neighbor = polls[swapIndex];
     await prisma.$transaction([
       prisma.poll.update({ where: { id: current.id }, data: { sortOrder: neighbor.sortOrder } }),
       prisma.poll.update({ where: { id: neighbor.id }, data: { sortOrder: current.sortOrder } }),
